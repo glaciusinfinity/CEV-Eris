@@ -1,5 +1,25 @@
 GLOBAL_LIST_EMPTY(all_antag_contracts)
-
+GLOBAL_LIST_INIT(antag_item_targets,list(
+		"the captain's antique laser gun" = /obj/item/weapon/gun/energy/captain,
+		"a hand teleporter" = /obj/item/weapon/hand_tele,
+		"an RCD" = /obj/item/weapon/rcd,
+		"a jetpack" = /obj/item/weapon/tank/jetpack,
+		"a captain's jumpsuit" = /obj/item/clothing/under/rank/captain,
+		"a functional AI" = /obj/item/device/aicard,
+		"the Technomancer Exultant's advanced voidsuit control module" = /obj/item/weapon/rig/ce,
+		"the station blueprints" = /obj/item/blueprints,
+		"a sample of slime extract" = /obj/item/slime_extract,
+		"a piece of corgi meat" = /obj/item/weapon/reagent_containers/food/snacks/meat/corgi,
+		"a Moebius expedition overseer's jumpsuit" = /obj/item/clothing/under/rank/expedition_overseer,
+		"a exultant's jumpsuit" = /obj/item/clothing/under/rank/exultant,
+		"a Moebius biolab officer's jumpsuit" = /obj/item/clothing/under/rank/moebius_biolab_officer,
+		"a Ironhammer commander's jumpsuit" = /obj/item/clothing/under/rank/ih_commander,
+		"a First Officer's jumpsuit" = /obj/item/clothing/under/rank/first_officer,
+		"the hypospray" = /obj/item/weapon/reagent_containers/hypospray,
+		"the captain's pinpointer" = /obj/item/weapon/pinpointer,
+		"an ablative armor vest" = /obj/item/clothing/suit/armor/laserproof,
+		"an Ironhammer hardsuit control module" = /obj/item/weapon/rig/combat/ironhammer
+	))
 /datum/antag_contract
 	var/name
 	var/desc
@@ -17,6 +37,13 @@ GLOBAL_LIST_EMPTY(all_antag_contracts)
 
 /datum/antag_contract/proc/place()
 	GLOB.all_antag_contracts += src
+
+/datum/antag_contract/proc/remove()
+	GLOB.all_antag_contracts -= src
+
+// Called on every contract when a mob is despawned - currently, this can only happen when someone cryos
+/datum/antag_contract/proc/on_mob_despawned(datum/mind/M)
+	return
 
 /datum/antag_contract/proc/complete(datum/mind/M)
 	if(completed)
@@ -104,6 +131,9 @@ GLOBAL_LIST_EMPTY(all_antag_contracts)
 	if(implant.wearer && implant.wearer.mind == target_mind)
 		complete(implant.owner)
 
+/datum/antag_contract/implant/on_mob_despawned(datum/mind/M)
+	if(M == target_mind)
+		remove()
 
 #define CONTRACT_RECON_TARGET_COUNT 3
 
@@ -183,6 +213,10 @@ GLOBAL_LIST_EMPTY(all_antag_contracts)
 /datum/antag_contract/item/assasinate/check_contents(list/contents)
 	return target in contents
 
+/datum/antag_contract/item/assasinate/on_mob_despawned(datum/mind/M)
+	if(M == target_mind)
+		remove()
+
 
 /datum/antag_contract/item/steal
 	name = "Steal"
@@ -190,37 +224,15 @@ GLOBAL_LIST_EMPTY(all_antag_contracts)
 	var/target_desc
 	var/target_type
 
-	var/static/list/possible_items = list(
-		"the captain's antique laser gun" = /obj/item/weapon/gun/energy/captain,
-		"a hand teleporter" = /obj/item/weapon/hand_tele,
-		"an RCD" = /obj/item/weapon/rcd,
-		"a jetpack" = /obj/item/weapon/tank/jetpack,
-		"a captain's jumpsuit" = /obj/item/clothing/under/rank/captain,
-		"a functional AI" = /obj/item/device/aicard,
-		"the Technomancer Exultant's advanced voidsuit control module" = /obj/item/weapon/rig/ce,
-		"the station blueprints" = /obj/item/blueprints,
-		"a sample of slime extract" = /obj/item/slime_extract,
-		"a piece of corgi meat" = /obj/item/weapon/reagent_containers/food/snacks/meat/corgi,
-		"a Moebius expedition overseer's jumpsuit" = /obj/item/clothing/under/rank/expedition_overseer,
-		"a exultant's jumpsuit" = /obj/item/clothing/under/rank/exultant,
-		"a Moebius biolab officer's jumpsuit" = /obj/item/clothing/under/rank/moebius_biolab_officer,
-		"a Ironhammer commander's jumpsuit" = /obj/item/clothing/under/rank/ih_commander,
-		"a First Officer's jumpsuit" = /obj/item/clothing/under/rank/first_officer,
-		"the hypospray" = /obj/item/weapon/reagent_containers/hypospray,
-		"the captain's pinpointer" = /obj/item/weapon/pinpointer,
-		"an ablative armor vest" = /obj/item/clothing/suit/armor/laserproof,
-		"an Ironhammer hardsuit control module" = /obj/item/weapon/rig/combat/ironhammer
-	)
-
 /datum/antag_contract/item/steal/New()
 	..()
 	if(!target_type)
-		var/list/candidates = possible_items.Copy()
+		var/list/candidates = GLOB.antag_item_targets.Copy()
 		for(var/datum/antag_contract/item/steal/C in GLOB.all_antag_contracts)
 			candidates.Remove(C.target_desc)
 		if(candidates.len)
 			target_desc = pick(candidates)
-			target_type = possible_items[target_desc]
+			target_type = candidates[target_desc]
 			desc = "Steal [target_desc] and send it via BSDM."
 
 /datum/antag_contract/item/steal/can_place()
@@ -270,7 +282,7 @@ GLOBAL_LIST_EMPTY(all_antag_contracts)
 	var/list/samples = list()
 	for(var/obj/item/weapon/reagent_containers/C in contents)
 		var/list/data = C.reagents?.get_data("blood")
-		if(!data || data["species"] != "Human" || data["blood_DNA"] in samples)
+		if(!data || data["species"] != "Human" || (data["blood_DNA"] in samples))
 			continue
 		samples += data["blood_DNA"]
 		if(samples.len >= count)

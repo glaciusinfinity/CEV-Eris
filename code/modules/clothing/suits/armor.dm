@@ -81,6 +81,18 @@
 /obj/item/clothing/suit/armor/greatcoat/ironhammer
 	icon_state = "greatcoat_ironhammer"
 
+/obj/item/clothing/suit/armor/greatcoat/serbian_overcoat
+	name = "black serbian overcoat"
+	desc = "A black serbian overcoat with armor-weave and rank epaulettes"
+	icon_state = "overcoat_black"
+	item_state = "overcoat_black"
+
+/obj/item/clothing/suit/armor/greatcoat/serbian_overcoat_brown
+	name = "brown serbian overcoat"
+	desc = "A brown serbian overcoat with armor-weave and rank epaulettes"
+	icon_state = "overcoat_brown"
+	item_state = "overcoat_brown"
+
 // Serbian flak vests
 /obj/item/clothing/suit/armor/flak
 	name = "black flakvest vest"
